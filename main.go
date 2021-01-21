@@ -34,23 +34,34 @@ func (mj2 MyJob2) Execute() job.ExecutionResult {
 }
 
 func main() {
+	// let's time it
 	start := time.Now()
+	// some jobs to be executed
+	// try out creating as many as you like
 	myMJs := []MyJob{
 		MyJob{ID: 11},
 		MyJob{ID: 12},
 		MyJob{ID: 13},
 		MyJob{ID: 14},
 	}
+	// set a concurrency
+	// change it and see how that affects the total time taken
 	myConcurrency := 4
+	// let's have these jobs execute concurrently
 	jobsIn, jobResultsOut := b.ExecuteJobsAtConcurrency(myConcurrency)
+	// spawn a goroutine that sends in the jobs from the above list through the jobsIn channel
 	go func() {
 		for i := range myMJs {
 			jobsIn <- &myMJs[i]
 		}
+		// close the channel to indicate that there are no more jobs
 		close(jobsIn)
 	}()
+	// let's create another set of concurrent workers
 	jobsIn2, jobResultsOut2 := b.ExecuteJobsAtConcurrency(myConcurrency)
+	// connecting these two phases to create a job pipeline
 	b.Pipe(jobResultsOut, jobsIn2)
+	// printing out the final execution results after phase 2
 	for finalResult := range jobResultsOut2 {
 		fmt.Println(finalResult)
 	}
